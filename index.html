@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detector</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
+        .box { max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { display: none; }
+        .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        img { max-width: 100%; max-height: 250px; margin-top: 15px; border-radius: 5px; display: none; }
+        #res { font-size: 22px; font-weight: bold; margin-top: 15px; color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <h1>Detector de Emociones</h1>
+    <div class="box">
+        <label class="btn"><input type="file" accept="image/*" onchange="preview(event)">Subir Imagen</label>
+        <br><img id="img" src="#">
+        <div id="res">Cargando IA...</div>
+    </div>
+    <script src="https://jsdelivr.net"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script>
+        // TU LINK DE TEACHABLE MACHINE YA INTEGRADO:
+        const URL = "https://withgoogle.com";
+        let model;
+        async function load() {
+            model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+            document.getElementById("res").innerText = "¡IA Lista! Sube una foto.";
+        }
+        load();
+        function preview(e) {
+            const file = e.target.files[0];
+            if(!file || !model) return;
+            document.getElementById("res").innerText = "Analizando...";
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const el = document.getElementById("img");
+                el.src = evt.target.result;
+                el.style.display = "inline-block";
+                el.onload = async function() {
+                    const pred = await model.predict(el);
+                    let max = pred[0];
+                    for(let i=1; i<pred.length; i++) { if(pred[i].probability > max.probability) max = pred[i]; }
+                    document.getElementById("res").innerHTML = max.probability > 0.4 ? `Resultado: <b>${max.className}</b> (${(max.probability*100).toFixed(0)}%)` : "No se reconoce la emoción.";
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
