@@ -11,6 +11,7 @@
         .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
         img { max-width: 100%; max-height: 250px; margin-top: 15px; border-radius: 5px; display: none; }
         #res { font-size: 22px; font-weight: bold; margin-top: 15px; color: #2c3e50; }
+        #error-log { font-size: 12px; color: red; margin-top: 10px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -24,22 +25,26 @@
         <br>
         <img id="img" src="#" alt="Vista previa">
         <div id="res">Cargando IA...</div>
+        <div id="error-log"></div>
     </div>
 
-    <!-- Librerías de Google TensorFlow -->
-    <script src="https://jsdelivr.net"></script>
-    <script src="https://jsdelivr.net"></script>
+    <!-- Librerías oficiales recomendadas por Google Teachable Machine -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script>
-        const URL = "https://withgoogle.com";
+        const URL = "https://teachablemachine.withgoogle.com/models/o1JVH08fN/";
         let model;
 
         async function load() {
             try {
+                // Cargamos el modelo usando las librerías oficiales actualizadas
                 model = await tmImage.load(URL + "model.json", URL + "metadata.json");
                 document.getElementById("res").innerText = "¡IA Lista! Sube una foto.";
+                document.getElementById("error-log").innerText = "";
             } catch (error) {
-                document.getElementById("res").innerText = "Error al conectar con la IA. Recarga la página.";
+                document.getElementById("res").innerText = "Error al conectar con la IA.";
+                document.getElementById("error-log").innerText = "Detalle técnico: " + error.message;
                 console.error(error);
             }
         }
