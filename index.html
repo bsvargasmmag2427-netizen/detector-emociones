@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Detector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Emociones</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
         .box { max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -13,37 +14,63 @@
     </style>
 </head>
 <body>
+
     <h1>Detector de Emociones</h1>
     <div class="box">
-        <label class="btn"><input type="file" accept="image/*" onchange="preview(event)">Subir Imagen</label>
-        <br><img id="img" src="#">
+        <label class="btn">
+            <input type="file" accept="image/*" onchange="preview(event)">
+            Subir Imagen
+        </label>
+        <br>
+        <img id="img" src="#" alt="Vista previa">
         <div id="res">Cargando IA...</div>
     </div>
+
+    <!-- Librerías de Google TensorFlow -->
     <script src="https://jsdelivr.net"></script>
-<script src="https://jsdelivr.net"></script>
+    <script src="https://jsdelivr.net"></script>
+
     <script>
-        // TU LINK DE TEACHABLE MACHINE YA INTEGRADO:
         const URL = "https://withgoogle.com";
         let model;
+
         async function load() {
-            model = await tmImage.load(URL + "model.json", URL + "metadata.json");
-            document.getElementById("res").innerText = "¡IA Lista! Sube una foto.";
+            try {
+                model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+                document.getElementById("res").innerText = "¡IA Lista! Sube una foto.";
+            } catch (error) {
+                document.getElementById("res").innerText = "Error al conectar con la IA. Recarga la página.";
+                console.error(error);
+            }
         }
         load();
+
         function preview(e) {
             const file = e.target.files[0];
             if(!file || !model) return;
+            
             document.getElementById("res").innerText = "Analizando...";
+            
             const reader = new FileReader();
             reader.onload = function(evt) {
                 const el = document.getElementById("img");
                 el.src = evt.target.result;
                 el.style.display = "inline-block";
+                
                 el.onload = async function() {
                     const pred = await model.predict(el);
                     let max = pred[0];
-                    for(let i=1; i<pred.length; i++) { if(pred[i].probability > max.probability) max = pred[i]; }
-                    document.getElementById("res").innerHTML = max.probability > 0.4 ? `Resultado: <b>${max.className}</b> (${(max.probability*100).toFixed(0)}%)` : "No se reconoce la emoción.";
+                    
+                    for(let i = 1; i < pred.length; i++) { 
+                        if(pred[i].probability > max.probability) max = pred[i]; 
+                    }
+                    
+                    if (max.probability > 0.2) {
+                        let porcentaje = (max.probability * 100).toFixed(0);
+                        document.getElementById("res").innerHTML = `Resultado: <b>${max.className}</b> (${porcentaje}%)`;
+                    } else {
+                        document.getElementById("res").innerText = "No se reconoce la emoción.";
+                    }
                 }
             }
             reader.readAsDataURL(file);
