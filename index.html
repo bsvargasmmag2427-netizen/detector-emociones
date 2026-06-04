@@ -3,76 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconocedor de Rostros</title>
+    <title>Scanner IA - Reconocimiento Facial</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
-        .box { max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input { display: none; }
-        .btn { display: inline-block; padding: 10px 20px; background: #2ecc71; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn:hover { background: #27ae60; }
-        img { max-width: 100%; max-height: 250px; margin-top: 15px; border-radius: 5px; display: none; }
-        #res { font-size: 22px; font-weight: bold; margin-top: 15px; color: #2c3e50; }
+        :root {
+            --primary: #2ecc71;
+            --primary-hover: #27ae60;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            letter-spacing: -0.05em;
+            background: linear-gradient(to right, #2ecc71, #a8ff78);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 450px;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-sizing: border-box;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(46, 204, 113, 0.3);
+            border-radius: 16px;
+            padding: 30px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background: rgba(46, 204, 113, 0.05);
+        }
+
+        .drop-zone input { display: none; }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .upload-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .preview-wrapper {
+            position: relative;
+            margin-top: 20px;
+            display: none;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        img {
+            width: 100%;
+            max-height: 320px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .scanner-line {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, transparent, var(--primary), transparent);
+            box-shadow: 0 0 15px var(--primary), 0 0 25px var(--primary);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        #status-bar {
+            margin-top: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.02);
+            transition: all 0.3s;
+        }
+
+        .status-loading { color: #f1c40f; }
+        .status-ready { color: var(--primary); }
+        .status-scanning { color: #3498db; }
+
+        .result-badge {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid var(--primary);
+            padding: 8px 16px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 1.3rem;
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
 
-    <h1>Reconocedor de Rostros IA</h1>
-    <div class="box">
-        <label class="btn">
-            <input type="file" accept="image/*" onchange="preview(event)">
-            Subir Foto del Rostro
-        </label>
-        <br>
-        <img id="img" src="#" alt="Vista previa">
-        <div id="res">Cargando Reconocedor...</div>
+    <h1>Reconocimiento Facial IA</h1>
+    <p>Sube o arrastra una fotografía para identificar la identidad del rostro.</p>
+
+    <div class="card">
+        <div class="drop-zone" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" accept="image/*" onchange="processImage(event)">
+            <span class="upload-icon">👤</span>
+            <div class="upload-text">Haga clic o arrastre una imagen aquí</div>
+        </div>
+
+        <div class="preview-wrapper" id="wrapper">
+            <div class="scanner-line" id="laser"></div>
+            <img id="img" src="#" alt="Rostro a analizar">
+        </div>
+
+        <div id="status-bar" class="status-loading">Inicializando sistemas biométricos...</div>
     </div>
 
-    <!-- Librerías estables de Google TensorFlow -->
+    <!-- Librerías de Google TensorFlow -->
     <script src="https://jsdelivr.net"></script>
     <script src="https://jsdelivr.net"></script>
 
     <script>
-        // Tu nuevo enlace de Teachable Machine asignado correctamente
-        const URL = "https://teachablemachine.withgoogle.com/models/z_8jaSIz3/";
+        const URL = "https://withgoogle.com";
         let model;
 
-        async function load() {
+        async function loadModel() {
+            const statusBar = document.getElementById("status-bar");
             try {
                 model = await tmImage.load(URL + "model.json", URL + "metadata.json");
-                document.getElementById("res").innerText = "¡IA Lista! Sube una foto para identificar.";
+                statusBar.innerText = "⚡ Sistema Listo. Esperando imagen...";
+                statusBar.className = "status-ready";
             } catch (error) {
-                document.getElementById("res").innerText = "Error al conectar con el reconocedor.";
+                statusBar.innerText = "❌ Error de sincronización con el modelo.";
+                statusBar.style.color = "#e74c3c";
                 console.error(error);
             }
         }
-        load();
+        loadModel();
 
-        function preview(e) {
-            const file = e.target.files[0];
+        function processImage(e) {
+            const file = e.target.files;
             if(!file || !model) return;
-            
-            document.getElementById("res").innerText = "Identificando rostro...";
-            
+
+            const statusBar = document.getElementById("status-bar");
+            const wrapper = document.getElementById("wrapper");
+            const laser = document.getElementById("laser");
+            const img = document.getElementById("img");
+
+            statusBar.innerText = "🔍 Escaneando patrones faciales...";
+            statusBar.className = "status-scanning";
+            laser.style.display = "block";
+
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const el = document.getElementById("img");
-                el.src = evt.target.result;
-                el.style.display = "inline-block";
+                img.src = evt.target.result;
+                wrapper.style.display = "block";
                 
-                el.onload = async function() {
-                    const pred = await model.predict(el);
-                    let max = pred[0];
-                    
-                    for(let i = 1; i < pred.length; i++) { 
-                        if(pred[i].probability > max.probability) max = pred[i]; 
-                    }
-                    
-                    if (max.probability > 0.4) {
-                        let porcentaje = (max.probability * 100).toFixed(0);
-                        document.getElementById("res").innerHTML = `Rostro detectado: <b>${max.className}</b> (${porcentaje}%)`;
-                    } else {
-                        document.getElementById("res").innerText = "Rostro no reconocido.";
-                    }
+                img.onload = async function() {
+                    setTimeout(async () => {
+                        const pred = await model.predict(img);
+                        let max = pred;
+                        
+                        for(let i = 1; i < pred.length; i++) { 
+                            if(pred[i].probability > max.probability) max = pred[i]; 
+                        }
+                        
+                        laser.style.display = "none";
+                        statusBar.className = "status-ready";
+
+                        if (max.probability > 0.45) {
+                            let percentage = (max.probability * 100).toFixed(0);
+                            statusBar.innerHTML = `Identidad detectada:<br><span class="result-badge">${max.className} (${percentage}%)</span>`;
+                        } else {
+                            statusBar.innerHTML = "⚠️ Nivel de confianza bajo.<br><span style='color: #e67e22;'>Rostro no identificado</span>";
+                        }
+                    }, 1200);
                 }
             }
             reader.readAsDataURL(file);
