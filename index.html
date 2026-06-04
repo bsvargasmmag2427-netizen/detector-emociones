@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner IA - Reconocimiento Facial</title>
+    <title>Reconocimiento Facial IA</title>
     <style>
         :root {
             --primary: #2ecc71;
@@ -146,27 +146,26 @@
             Alternar a subir foto
         </label>
 
-        <div id="status-bar" class="status-loading">Sincronizando con modelo remoto...</div>
+        <div id="status-bar" class="status-loading">Conectando con la red neuronal...</div>
     </div>
 
-    <!-- Librerías de Google TensorFlow optimizadas para compatibilidad cruzada móvil/escritorio -->
+    <!-- CDN Alternativo y compatible de TensorFlow.js -->
     <script src="https://jsdelivr.net"></script>
     <script src="https://jsdelivr.net"></script>
 
     <script>
-        // Tu modelo z_8jaSIz3 integrado directamente con soporte absoluto HTTPS
-        const URL_MODELO = "https://teachablemachine.withgoogle.com/models/z_8jaSIz3/";
+        const URL_MODELO = "https://withgoogle.com";
         let model, webcam, maxPredictions;
         let isUsingCamera = true;
 
         async function init() {
             const statusBar = document.getElementById("status-bar");
             try {
-                // Descarga forzada del JSON de metadatos y pesos de la red neuronal
+                // Carga el modelo directamente usando la versión de librería compatible
                 model = await tmImage.load(URL_MODELO + "model.json", URL_MODELO + "metadata.json");
                 maxPredictions = model.getTotalClasses();
                 
-                // Intento automático de abrir la cámara web (frontal en celulares)
+                // Intento automático de abrir la cámara web
                 webcam = new tmImage.Webcam(320, 240, true);
                 await webcam.setup();
                 await webcam.play();
@@ -179,8 +178,7 @@
                 statusBar.innerText = "⚡ Cámara activa. Escaneando...";
                 statusBar.className = "status-ready";
             } catch (error) {
-                // Si el dispositivo móvil bloquea la cámara web o las peticiones CORS, se activa el fallback
-                console.log("Cámara u origen bloqueado, activando sistema alterno.");
+                console.log("Cámara inaccesible, forzando modo de archivo.");
                 isUsingCamera = false;
                 
                 try {
@@ -188,10 +186,10 @@
                         model = await tmImage.load(URL_MODELO + "model.json", URL_MODELO + "metadata.json");
                         maxPredictions = model.getTotalClasses();
                     }
-                    statusBar.innerText = "¡IA Sincronizada! Por seguridad, sube una foto de tu galería.";
+                    statusBar.innerText = "¡IA Lista! Sube una foto para identificar.";
                     statusBar.className = "status-ready";
                 } catch(e) {
-                    statusBar.innerHTML = "❌ Error de conexión.<br><span style='font-size:0.8rem; color:#e74c3c;'>Asegúrate de recargar la página en modo incógnito.</span>";
+                    statusBar.innerHTML = "❌ Error al descargar el modelo.<br><span style='font-size:0.8rem; color:#e74c3c;'>Por favor, abre la página en una pestaña de incógnito limpia.</span>";
                     statusBar.className = "";
                 }
             }
@@ -237,7 +235,7 @@
             const statusBar = document.getElementById("status-bar");
             const imgFallback = document.getElementById("img-fallback");
             
-            statusBar.innerText = "⚙️ Decodificando pixeles del archivo...";
+            statusBar.innerText = "⚙️ Procesando imagen...";
             
             const reader = new FileReader();
             reader.onload = function(evt) {
