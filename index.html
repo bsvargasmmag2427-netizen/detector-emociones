@@ -3,250 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconocimiento Facial IA</title>
+    <title>Mi Reconocedor de Rostros</title>
     <style>
-        :root {
-            --primary: #2ecc71;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-secondary: #94a3b8;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            background: linear-gradient(to right, #2ecc71, #a8ff78);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-        }
-
-        p { color: var(--text-secondary); margin-bottom: 30px; text-align: center; }
-
-        .card {
-            background: var(--card-bg);
-            width: 100%;
-            max-width: 450px;
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.05);
-            box-sizing: border-box;
-            text-align: center;
-        }
-
-        .viewer-wrapper {
-            position: relative;
-            margin: 10px auto;
-            width: 320px;
-            height: 240px;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            background: #000;
-            border: 2px solid rgba(46, 204, 113, 0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .viewer-wrapper video, .viewer-wrapper canvas, .viewer-wrapper img {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover;
-        }
-
-        img { display: none; }
-
-        .scanner-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(to right, transparent, var(--primary), transparent);
-            box-shadow: 0 0 15px var(--primary), 0 0 25px var(--primary);
-            animation: scan 2s linear infinite;
-            z-index: 10;
-        }
-
-        @keyframes scan {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
-
-        .btn-file {
-            margin-top: 20px;
-            display: inline-block;
-            padding: 12px 24px;
-            background: rgba(255,255,255,0.05);
-            color: var(--text);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-        .btn-file:hover { background: rgba(255,255,255,0.1); border-color: var(--primary); }
-        input[type="file"] { display: none; }
-
-        #status-bar {
-            margin-top: 25px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.02);
-        }
-
-        .status-loading { color: #f1c40f; }
-        .status-ready { color: var(--primary); }
-
-        .result-badge {
-            background: rgba(46, 204, 113, 0.15);
-            border: 1px solid var(--primary);
-            padding: 6px 16px;
-            border-radius: 50px;
-            display: inline-block;
-            margin-top: 8px;
-            font-size: 1.3rem;
-            color: #fff;
-        }
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
+        h1 { color: #333; }
+        #webcam-container { margin: 20px auto; border: 4px solid #333; width: 200px; height: 200px; border-radius: 10px; overflow: hidden; }
+        #label-container { font-size: 24px; font-weight: bold; margin-top: 20px; color: #007bff; }
+        button { padding: 10px 20px; font-size: 16px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #218838; }
     </style>
 </head>
 <body>
 
-    <h1>Reconocimiento Facial IA</h1>
-    <p>Usa la cámara en vivo o sube una imagen para identificar la identidad del rostro.</p>
+    <h1>Reconocedor de Rostros IA</h1>
+    <button type="button" onclick="init()">Iniciar Cámara</button>
+    
+    <div id="webcam-container"></div>
+    <div id="label-container">Presiona iniciar...</div>
 
-    <div class="card">
-        <div class="viewer-wrapper" id="viewer-box">
-            <div class="scanner-line"></div>
-            <img id="img-fallback" src="#" alt="Foto subida">
-        </div>
-
-        <label class="btn-file">
-            <input type="file" accept="image/*" onchange="processFile(event)">
-            Alternar a subir foto
-        </label>
-
-        <div id="status-bar" class="status-loading">Conectando con la red neuronal...</div>
-    </div>
-
-    <!-- CDN Alternativo y compatible de TensorFlow.js -->
+    <!-- Cargar TensorFlow.js y Teachable Machine -->
     <script src="https://jsdelivr.net"></script>
     <script src="https://jsdelivr.net"></script>
 
-    <script>
-        const URL_MODELO = "https://withgoogle.com";
-        let model, webcam, maxPredictions;
-        let isUsingCamera = true;
+    <script type="text/javascript">
+        // PEGA AQUÍ TU ENLACE DE TEACHABLE MACHINE (Asegúrate de que termine en /)
+        const URL = "https://teachablemachine.withgoogle.com/models/z_8jaSIz3/";
+
+        let model, webcam, labelContainer, maxPredictions;
 
         async function init() {
-            const statusBar = document.getElementById("status-bar");
-            try {
-                // Carga el modelo directamente usando la versión de librería compatible
-                model = await tmImage.load(URL_MODELO + "model.json", URL_MODELO + "metadata.json");
-                maxPredictions = model.getTotalClasses();
-                
-                // Intento automático de abrir la cámara web
-                webcam = new tmImage.Webcam(320, 240, true);
-                await webcam.setup();
-                await webcam.play();
-                
-                window.requestAnimationFrame(loop);
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
 
-                const viewerBox = document.getElementById("viewer-box");
-                viewerBox.appendChild(webcam.canvas);
-                
-                statusBar.innerText = "⚡ Cámara activa. Escaneando...";
-                statusBar.className = "status-ready";
-            } catch (error) {
-                console.log("Cámara inaccesible, forzando modo de archivo.");
-                isUsingCamera = false;
-                
-                try {
-                    if (!model) {
-                        model = await tmImage.load(URL_MODELO + "model.json", URL_MODELO + "metadata.json");
-                        maxPredictions = model.getTotalClasses();
-                    }
-                    statusBar.innerText = "¡IA Lista! Sube una foto para identificar.";
-                    statusBar.className = "status-ready";
-                } catch(e) {
-                    statusBar.innerHTML = "❌ Error al descargar el modelo.<br><span style='font-size:0.8rem; color:#e74c3c;'>Por favor, abre la página en una pestaña de incógnito limpia.</span>";
-                    statusBar.className = "";
-                }
-            }
+            document.getElementById("label-container").innerHTML = "Cargando modelo...";
+            
+            // Cargar el modelo de IA
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            // Configurar la webcam
+            const flip = true; 
+            webcam = new tmImage.Webcam(200, 200, flip); 
+            await webcam.setup(); 
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            // Agregar la webcam a la página web
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
         }
-        init();
 
         async function loop() {
-            if (!isUsingCamera) return;
-            webcam.update();
-            await predict(webcam.canvas);
+            webcam.update(); // Actualizar el frame de la cámara
+            await predict();
             window.requestAnimationFrame(loop);
         }
 
-        async function predict(imageElement) {
-            if (!model) return;
-            const statusBar = document.getElementById("status-bar");
-            const prediction = await model.predict(imageElement);
-            let max = prediction;
+        async function predict() {
+            // Analizar la imagen actual de la cámara
+            const prediction = await model.predict(webcam.canvas);
             
-            for(let i = 1; i < maxPredictions; i++) { 
-                if(prediction[i].probability > max.probability) max = prediction[i]; 
-            }
-            
-            if (max.probability > 0.45) {
-                let percentage = (max.probability * 100).toFixed(0);
-                statusBar.innerHTML = `Identidad confirmada:<br><span class="result-badge">${max.className} (${percentage}%)</span>`;
-            } else {
-                statusBar.innerHTML = "🔍 Escaneando rasgos faciales...";
-            }
-        }
+            let mejorPrediccion = "";
+            let maximaProbabilidad = 0;
 
-        function processFile(e) {
-            const file = e.target.files;
-            if(!file || !model) return;
-
-            if(isUsingCamera && webcam) {
-                isUsingCamera = false;
-                webcam.stop();
-                const canvasElement = document.querySelector("#viewer-box canvas");
-                if(canvasElement) canvasElement.remove();
-            }
-
-            const statusBar = document.getElementById("status-bar");
-            const imgFallback = document.getElementById("img-fallback");
-            
-            statusBar.innerText = "⚙️ Procesando imagen...";
-            
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                imgFallback.src = evt.target.result;
-                imgFallback.style.display = "block";
-                
-                imgFallback.onload = async function() {
-                    await predict(imgFallback);
+            // Buscar cuál clase tiene el porcentaje más alto
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > maximaProbabilidad) {
+                    maximaProbabilidad = prediction[i].probability;
+                    mejorPrediccion = prediction[i].className;
                 }
             }
-            reader.readAsDataURL(file);
+
+            // Mostrar el nombre en pantalla si pasa del 70% de seguridad
+            if (maximaProbabilidad > 0.70) {
+                labelContainer.innerHTML = `Detectado: ${mejorPrediccion} (${(maximaProbabilidad * 100).toFixed(0)}%)`;
+            } else {
+                labelContainer.innerHTML = "Buscando rostro...";
+            }
         }
     </script>
 </body>
